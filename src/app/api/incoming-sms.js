@@ -1,30 +1,23 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import twilio from 'twilio';
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_API_KEY_SECRET;
-const phoneNumberSid = process.env.TWILIO_PHONE_NUMBER_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 const client = twilio(accountSid, authToken);
 
-export default function handler(req = NextApiRequest, res = NextApiResponse) {
+export default function handler(req, res) {
   if (req.method === 'POST') {
     const { From, Body } = req.body;
 
-    // Forward the SMS to your personal number
     client.messages
       .create({
         body: `SMS from ${From}: ${Body}`,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: '+14135224500', // Your personal phone number
+        from: twilioPhoneNumber,
+        to: '+14135224500' // Your personal phone number
       })
-      .then(message => {
-        res.status(200).send(`Message forwarded: ${message.sid}`);
-      })
-      .catch(error => {
-        console.error('Error forwarding message:', error);
-        res.status(500).send(`Error: ${error.message}`);
-      });
+      .then((message) => res.status(200).json({ success: true, sid: message.sid }))
+      .catch((error) => res.status(500).json({ success: false, error: error.message }));
   } else {
-    res.status(405).send('Method Not Allowed');
+    res.status(405).json({ success: false, error: 'Method Not Allowed' });
   }
 }
